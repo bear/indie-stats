@@ -76,7 +76,7 @@ def refresh(cfg, domains):
     for key in domains:
         domain = domains[key]
         result = domain.refresh()
-        log.info('%s: %s' % (domain.domain, result))
+        log.info('%s: %s' % (domain.domain, result['refresh']))
 
 def initLogging(logger, logpath=None, echo=False):
     logFormatter = logging.Formatter("%(asctime)s %(levelname)-9s %(message)s", "%Y-%m-%d %H:%M:%S")

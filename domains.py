@@ -20,7 +20,7 @@ class Domain(object):
     """An Indieweb Domain"""
 
     def __init__(self, url, domainPath):
-        self.domainPath = domainPath
+        self.domainPath = os.path.abspath(os.path.expanduser(domainPath))
         self.domain     = None
         self.url        = None
         self.domainFile = None
@@ -32,7 +32,7 @@ class Domain(object):
         else:
             self.domain = item.path
 
-        self.dataFile = os.path.abspath(os.path.expanduser(os.path.join(self.domainPath, self.domain)))
+        self.dataFile = os.path.join(self.domainPath, self.domain)
 
         if self.url is None:
             if os.path.exists(self.dataFile):
@@ -46,12 +46,13 @@ class Domain(object):
                 self.url = 'http://%s' % self.domain
 
     def refresh(self):
+        ts     = time.gmtime()
         data   = { 'url': self.url,
                    'domain': self.domain,
                    'mf2': {},
                    'html': '',
                    'refresh': 500,
-                   'refreshed': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+                   'refreshed': time.strftime('%Y-%m-%dT%H:%M:%SZ', ts)
                  }
         try:
             r = requests.get(self.url, verify=False)
@@ -67,7 +68,10 @@ class Domain(object):
             data['refresh'] = 500
         with open(self.dataFile, 'w') as h:
             h.write(json.dumps(data, indent=2))
-        return data['refresh']
+        statFile = os.path.join(self.domainPath, '%s_%s' % (time.strftime('%Y%m%dT%H%M%S', ts), self.domain))
+        with open(statFile, 'w') as h:
+            h.write(json.dumps(data, indent=2))
+        return data
 
 class Domains(collections.OrderedDict):
     """A collection of Indieweb Domains"""
