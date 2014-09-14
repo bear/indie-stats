@@ -21,10 +21,7 @@ from mf2py.parser import Parser
 log = logging.getLogger('gather')
 
 
-def gather(cfg):
-    domains = Domains(cfg['dataPath'], cfg['domainPath'], cfg['domains'])
-    log.info('%d domains loaded from datastore' % len(domains))
-
+def gather(cfg, domains):
     r = requests.get(cfg['IRCPeople'], verify=False)
     log.info('IRCPeople request returned %s' % r.status_code)
     if r.status_code == requests.codes.ok:
@@ -46,7 +43,6 @@ def gather(cfg):
                                     log.info('%s not found in domain list' % domain.domain)
                                     n += 1
                                     domains[domain.domain] = domain
-                                    domain.refresh()
         # {   'alternates': [   {   'rel': u'meta',
         #                           'type': u'application/rdf+xml',
         #                           'url': u'/wiki/index.php?title=IRC_People&action=dublincore'},
@@ -74,6 +70,13 @@ def gather(cfg):
         log.info('%d new domains added' % n)
 
     domains.store()
+
+def refresh(cfg, domains):
+    log.info('refreshing domains')
+    for key in domains:
+        domain = domains[key]
+        result = domain.refresh()
+        log.info('%s: %s' % (domain.domain, result))
 
 def initLogging(logger, logpath=None, echo=False):
     logFormatter = logging.Formatter("%(asctime)s %(levelname)-9s %(message)s", "%Y-%m-%d %H:%M:%S")
@@ -123,8 +126,10 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', default='./indie-stats.cfg')
-    parser.add_argument('--echo',   default=True, action='store_true')
+    parser.add_argument('--config',  default='./indie-stats.cfg')
+    parser.add_argument('--echo',    default=True,  action='store_true')
+    parser.add_argument('--gather',  default=False, action='store_true')
+    parser.add_argument('--refresh', default=False, action='store_true')
 
     args = parser.parse_args()
     cfg  = loadConfig(args.config)
@@ -133,4 +138,11 @@ if __name__ == '__main__':
 
     log.info('starting')
 
-    gather(cfg)
+    domains = Domains(cfg['dataPath'], cfg['domainPath'], cfg['domains'])
+    log.info('%d domains loaded from datastore' % len(domains))
+
+    if args.gather:
+        gather(cfg, domains)
+
+    if args.refresh:
+        refresh(cfg, domains)

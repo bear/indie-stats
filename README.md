@@ -10,6 +10,24 @@ An implementation of the idea from https://snarfed.org/indie-stats
 - run site thru MF2 parser and store raw JSON
 - gather u- data and add to list of domains
 
-# Long Term Goals
+## Longer Term
 - Aggregate stats and generate reports
 - Make data available for exporting in a number crunching friendly format
+
+# Structure
+
+    data\
+      domains.dat -- master list of domains
+      domains\
+          example.com -- json meta data
+          example.com__data -- stats, one line per update - json format
+
+# Meta Data
+
+Stored per domain:
+- domain name: unique key
+- url
+- mf2: mf2 dictionary from last get
+- html: raw html from last get
+- refresh: status code
+- refreshed: utc timestamp

@@ -8,6 +8,7 @@ Walk thru a list of resources to extract possible IndieWeb domains from.
 """
 
 import os, sys
+import time
 import json
 import collections
 import requests
@@ -36,30 +37,37 @@ class Domain(object):
         if self.url is None:
             if os.path.exists(self.dataFile):
                 with open(self.dataFile, 'r') as h:
-                    data     = json.load(h)
-                    self.url = data['url']
+                    try:
+                        data     = json.load(h)
+                        self.url = data['url']
+                    except:
+                        self.url = 'http://%s' % self.domain
             else:
                 self.url = 'http://%s' % self.domain
 
     def refresh(self):
-        data = { 'url': self.url,
-                 'domain': self.domain,
-                 'mf2': {},
-               }
+        data   = { 'url': self.url,
+                   'domain': self.domain,
+                   'mf2': {},
+                   'html': '',
+                   'refresh': 500,
+                   'refreshed': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+                 }
         try:
             r = requests.get(self.url, verify=False)
-            data['refresh'] = r.status_code
             if r.status_code == requests.codes.ok:
                 if 'charset' in r.headers.get('content-type', ''):
                     html = r.text
                 else:
                     html = r.content
-                data['mf2'] = Parser(doc=html).to_dict()
-
+                data['html'] = html
+                data['mf2']  = Parser(doc=html).to_dict()
+            data['refresh'] = r.status_code
         except:
-            data['refresh'] = '%s' % sys.exc_info()[0]
+            data['refresh'] = 500
         with open(self.dataFile, 'w') as h:
-            h.write(json.dumps(data))
+            h.write(json.dumps(data, indent=2))
+        return data['refresh']
 
 class Domains(collections.OrderedDict):
     """A collection of Indieweb Domains"""
