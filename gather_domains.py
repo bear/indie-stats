@@ -69,14 +69,12 @@ def gather(cfg, domains):
 
         log.info('%d new domains added' % n)
 
-    domains.store()
-
 def refresh(cfg, domains):
     log.info('refreshing domains')
     for key in domains:
         domain = domains[key]
         result = domain.refresh()
-        log.info('%s: %s' % (domain.domain, result['refresh']))
+        log.info('%s: %s' % (domain.domain, result['status']))
 
 def initLogging(logger, logpath=None, echo=False):
     logFormatter = logging.Formatter("%(asctime)s %(levelname)-9s %(message)s", "%Y-%m-%d %H:%M:%S")
@@ -146,3 +144,5 @@ if __name__ == '__main__':
 
     if args.refresh:
         refresh(cfg, domains)
+
+    domains.store()
