@@ -20,7 +20,7 @@
 {% if authed %}
 <p>Logged in as <a href="{{ authed_url }}">{{ authed_domain }}</a></p>
 {% else %}
-<p><a href="/login{{ from_uri }}">Login</a> to claim or update your domain</p>
+<p><a href="/login?from_uri={{ from_uri }}">Login</a> to claim or update your domain</p>
 {% endif %}
     </footer>
   </div>

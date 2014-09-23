@@ -150,8 +150,8 @@ def handleLogin():
     templateData['title']         = 'Authenticate'
     templateData['form']          = form
     templateData['authed']        = False
-    templateData['authed_domain'] = authed_domain
-    templateData['authed_url']    = authed_url
+    templateData['authed_domain'] = ''
+    templateData['authed_url']    = ''
     templateData['domain_url']    = None
     templateData['domain']        = None
     templateData['from_uri']      = ''
@@ -321,7 +321,7 @@ def handleDomain():
             templateData['from_uri'] = ''
         else:
             templateData['message']  = 'Unable to find any information about %s' % d
-            templateData['from_uri'] = '/domain?id=%s' % d
+            templateData['from_uri'] = '/domain'
 
         return render_template('domain-not-found.jinja', **templateData)
 
