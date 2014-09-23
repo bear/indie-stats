@@ -13,16 +13,18 @@
     <link href="/static/main.css" rel="stylesheet" type="text/css">
 </head>
 <body>
-  <div class="content">
+  <div class="header">
     <h1><a href="/">Indie-Stats</a></h1>
-    {% block content %}{% endblock %}
-    <footer class="footer">
-{% if authed %}
-<p>Logged in as <a href="{{ authed_url }}">{{ authed_domain }}</a></p>
-{% else %}
-<p><a href="/login?from_uri={{ from_uri }}">Login</a> to claim or update your domain</p>
-{% endif %}
-    </footer>
+    <div class="content">
+      {% block content %}{% endblock %}
+      <footer class="footer">
+        {% if authed %}
+        <p>Logged in as <a href="{{ authed_url }}">{{ authed_domain }}</a>. <a href="/logout">Logout</a></p>
+        {% else %}
+        <p><a href="/login?from_uri={{ from_uri }}">Login</a> to claim or update your domain</p>
+        {% endif %}
+      </footer>
+    </div>
   </div>
 </div>
 </body>
