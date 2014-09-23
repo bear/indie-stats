@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+
+    {% for key, value in meta.iteritems() %}
+    <meta name="{{ key }}" content="{{ value }}"/>
+    {% endfor %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="mobile-web-app-capable" content="yes"/>
+
+    <link href="/static/main.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+  <div class="content">
+    <h1><a href="/">Indie-Stats</a></h1>
+    {% block content %}{% endblock %}
+    <footer class="footer">
+{% if authed %}
+<p>Logged in as <a href="{{ authed_url }}">{{ authed_domain }}</a></p>
+{% else %}
+<p><a href="/login{{ from_uri }}">Login</a> to claim or update your domain</p>
+{% endif %}
+    </footer>
+  </div>
+</div>
+</body>
+</html>

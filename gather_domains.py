@@ -20,8 +20,18 @@ from mf2py.parser import Parser
 
 log = logging.getLogger('gather')
 
+def checkURL(url):
+    result = None
+    try:
+        r = requests.head(url, allow_redirects=True)
+        if r.status_code == requests.codes.ok:
+            result = r.url
+    except:
+        result = None
+    return result
 
 def gather(cfg, domains):
+    n = 0
     r = requests.get(cfg['IRCPeople'], verify=False)
     log.info('IRCPeople request returned %s' % r.status_code)
     if r.status_code == requests.codes.ok:
@@ -30,14 +40,13 @@ def gather(cfg, domains):
         else:
             html = r.content
         mf2 = Parser(doc=html).to_dict()
-        n   = 0
         if 'items' in mf2:
             for item in mf2['items']:
                 if 'children' in item:
                     for child in item['children']:
                         if 'properties' in child:
-                            url = child['properties']['url'][0]
-                            if len(url) > 0:
+                            url = checkURL(child['properties']['url'][0])
+                            if url is not None:
                                 domain = Domain(url, cfg['domainPath'])
                                 if domain.domain not in domains:
                                     log.info('%s not found in domain list' % domain.domain)
@@ -66,8 +75,8 @@ def gather(cfg, domains):
         #                                                            u'url': [   u'http://aaronparecki.com']},
         #                                          'type': [u'h-card'],
         #                                          'value': u' aaronpk (US/Pacific)'},
-
-        log.info('%d new domains added' % n)
+    log.info('%d new domains added' % n)
+    return n
 
 def refresh(cfg, domains):
     log.info('refreshing domains')
@@ -126,7 +135,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config',  default='./indie-stats.cfg')
     parser.add_argument('--echo',    default=True,  action='store_true')
-    parser.add_argument('--gather',  default=False, action='store_true')
+    parser.add_argument('--seed'  ,  default=False, action='store_true')
     parser.add_argument('--refresh', default=False, action='store_true')
 
     args = parser.parse_args()
@@ -139,7 +148,7 @@ if __name__ == '__main__':
     domains = Domains(cfg['dataPath'], cfg['domainPath'], cfg['domains'])
     log.info('%d domains loaded from datastore' % len(domains))
 
-    if args.gather:
+    if args.seed:
         gather(cfg, domains)
 
     if args.refresh:

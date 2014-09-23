@@ -1,0 +1,21 @@
+{% extends "base.jinja" %}
+{% block content %}
+<div class="h-entry">        
+<h1 class="p-name"><a class="u-url" href="{{ domain_url }}">{{ domain }}</a></h1>
+{% for message in get_flashed_messages() %}
+  <div class="flash">{{ message }}</div>
+{% endfor %}
+{% if domain_polled|length > 0 %}
+<p>Last polled at <time class="dt-published" datetime="{{ domain_polled_ts }}">{{ domain_polled }}</time></p>
+{% endif %}
+{% if owner %}
+<form action="" method="post" name="domain">
+    Exclude this domain? {{ form.excluded }}
+    {{form.hidden_tag()}}
+    <p><button type="submit">Update</button></p>
+</form>
+{% else %}
+<p>{{ caption }}</p>
+{% endif %}
+</div>
+{% endblock content %}
