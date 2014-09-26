@@ -8,7 +8,7 @@
 {% if domain_polled|length > 0 %}
 <p>Last polled at <time class="dt-published" datetime="{{ domain_polled_ts }}">{{ domain_polled }}</time></p>
 {% endif %}
-{% if owner %}
+{% if owner and authed %}
 <form action="" method="post" name="domain">
     Exclude this domain? {{ form.excluded }}
     {{form.hidden_tag()}}

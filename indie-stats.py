@@ -27,7 +27,7 @@ from wtforms import TextField, HiddenField, BooleanField
 from wtforms.validators import Required
 
 import ninka
-from domains import Domain
+from domains import Domain, Domains
 
 class LoginForm(Form):
     domain       = TextField('domain', validators = [ Required() ])
@@ -242,18 +242,24 @@ def handleDomain():
     owner = False
     authed, indieauth_id, authed_domain, authed_url = checkAuth()
 
+
+
     d = request.args.get('id')
     app.logger.info('args["id"] %s' % d)
     if d is None:
         d     = indieauth_id
         owner = True
     else:
-        owner = d.lower() == indieauth_id
-
-    app.logger.info('domain [%s]' % d)
+        if authed:
+            d = d.lower().replace('http://', '').replace('https://', '')
+            s = indieauth_id.lower().replace('http://', '').replace('https://', '')
+            owner = d == s
 
     if d is not None:
-        domain = Domain(d, cfg['domainPath'])
+        domainList = Domains(cfg['dataPath'], cfg['domainPath'], cfg['domains'])
+        if d not in domainList:
+            domainList[d] = Domain(d, cfg['domainPath'])
+        domain = domainList[d]
         status = domainStatus(domain)
         found  = domain.found
 
@@ -262,8 +268,6 @@ def handleDomain():
             found = True
     else:
         found = False
-
-    app.logger.info('domain found %s' % found)
 
     if found:
         form = DomainForm(domain=domain.domain, excluded=domain.excluded)
@@ -274,6 +278,7 @@ def handleDomain():
                 domain.excluded = form.excluded.data
                 domain.claimed  = True
                 domain.store()
+                domainList.store()
                 return redirect('/domain')
             else:
                 flash('all fields are required')

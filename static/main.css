@@ -1,6 +1,3 @@
-/* borrowed and manged from CSS Zen Garden by Dave Shea */
-/* specifically Sakura by Tatsuya Uchida, Japan         */
-
 html {
     margin: 0;
     padding: 0;
@@ -17,7 +14,9 @@ h1 {
     letter-spacing: 1px; 
     margin-bottom: 0; 
 }
-
+header { 
+    font-size: 1.8em;
+}
 footer { 
     font-size: 0.8em;
     text-align: center; 
