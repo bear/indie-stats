@@ -99,13 +99,13 @@ def handleLogout():
 @app.route('/login', methods=['GET', 'POST'])
 def handleLogin():
     app.logger.info('handleLogin [%s]' % request.method)
+    app.logger.info('client_id [%s] redirect_uri [%s/success]' % (cfg['client_id'], cfg['baseurl']))
 
     form = LoginForm(client_id=cfg['client_id'], 
                      redirect_uri='%s/success' % cfg['baseurl'], 
                      from_uri=request.args.get('from_uri'))
 
     if form.validate_on_submit():
-        app.logger.info('login domain [%s]' % form.domain.data)
         domain = form.domain.data
         url    = urlparse(domain)
         if url.scheme not in ('http', 'https'):
@@ -115,6 +115,7 @@ def handleLogin():
                 domain = 'http://%s' % url.netloc
 
         authEndpoints = ninka.indieauth.discoverAuthEndpoints(domain)
+        app.logger.info('form domain [%s] domain [%s] auth endpoints %d' % (form.domain.data, domain, len(authEndpoints)))
 
         if 'authorization_endpoint' in authEndpoints:
             authURL = None
@@ -136,6 +137,7 @@ def handleLogin():
                                   authURL.fragment).geturl()
 
                 if db is not None:
+                    app.logger.info('storing auth response [%s]' % domain)
                     db.hset(domain, 'from_uri',     form.from_uri.data)
                     db.hset(domain, 'redirect_uri', form.redirect_uri.data)
                     db.hset(domain, 'client_id',    form.client_id.data)
@@ -256,8 +258,10 @@ def handleDomain():
             owner = d == s
 
     if d is not None:
+        app.logger.info('%s %s %s %s' % (d, cfg['dataPath'], cfg['domainPath'], cfg['domains']))
         domainList = Domains(cfg['dataPath'], cfg['domainPath'], cfg['domains'])
         if d not in domainList:
+
             domainList[d] = Domain(d, cfg['domainPath'])
         domain = domainList[d]
         status = domainStatus(domain)

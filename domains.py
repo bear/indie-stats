@@ -60,15 +60,20 @@ class Domain(object):
 
         if os.path.exists(self.domainFile):
             with open(self.domainFile, 'r') as h:
-                self.fromDict(json.load(h))
-            if self.polled is not None:
-                self.ts = time.strptime(self.polled, '%Y-%m-%dT%H:%M:%SZ')
-            self.found = True
+                try:
+                    self.fromDict(json.load(h))
+
+                    if self.polled is not None:
+                        self.ts = time.strptime(self.polled, '%Y-%m-%dT%H:%M:%SZ')
+                    self.found = True
+                except:
+                    self.found = False
 
     def asDict(self):
         return { 'domain':   self.domain,
                  'url':      self.url,
                  'html':     self.html,
+                 'headers':  dict(self.headers),
                  'status':   self.status,
                  'polled':   self.polled,
                  'history':  self.history,
@@ -77,7 +82,7 @@ class Domain(object):
                }
 
     def fromDict(self, data):
-        for key in ('domain', 'url', 'html', 'status', 'polled', 'history', 'excluded', 'claimed'):
+        for key in ('domain', 'url', 'html', 'headers', 'status', 'polled', 'history', 'excluded', 'claimed'):
             if key in data:
                 setattr(self, key, data[key])
 
@@ -148,7 +153,15 @@ class Domains(OrderedDict):
             # ]
             for item in data:
                 if 'domain' in item:
-                    self[item['domain']] = Domain(item['url'], self.domainPath)
+                    domain = Domain(item['url'], self.domainPath)
+                    if domain.found:
+                        self[item['domain']] = domain
+
+        for f in os.listdir(self.domainPath):
+            if f not in self:
+                domain = Domain(f, self.domainPath)
+                if domain.found:
+                    self[domain.domain] = domain
 
     def store(self):
         data = []
