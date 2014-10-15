@@ -22,30 +22,64 @@ from domains import Domains, Domain
 
 log = logging.getLogger('gather')
 
+def saveResults(domain, script, resultFile):
+    statsFile = os.path.join(cfg['domainPath'], domain, 'stats_%s.json' % domain)
+    stats     = {}
+    results   = {}
+
+    # stats are assumed to be in the following format:
+    # { "20141004": { "count_hcards.py": { "h-card": 1 }}, 
+    #   "20141001": { "count_hcards.py": { "h-card": 1 }}, 
+    #   "20140930": { "count_hcards.py": { "h-card": 1 }}, 
+    #   "20140926": { "count_hcards.py": { "h-card": 1 }}
+    # }
+    if os.path.exists(statsFile):
+        with open(statsFile, 'r') as h:
+            stats = json.load(h)
+
+    # results are assumed to be in the following format:
+    # { "20141004T164138": {"h-card": 1}, 
+    #   "20141001T072243": {"h-card": 1}, 
+    #   "20140930T073527": {"h-card": 1}, 
+    #   "20140926T072253": {"h-card": 1}
+    # }
+    if os.path.exists(resultFile):
+        with open(resultFile, 'r') as h:
+            results = json.load(h)
+
+        for key in results.keys():
+            resultDate = key.split('T')[0]
+            if resultDate not in stats:
+                stats[resultDate] = {}
+            stats[resultDate][script] = results[key] 
+
+        with open(statsFile, 'w') as h:
+            h.write(json.dumps(stats))
 
 def process(cfg, scripts, pendingData):
     log.info('calling %d scripts for %d domains' % (len(scripts), len(pendingData)))
 
     for domain in pendingData.keys():
-        if domain == 'bear.im':
-            for script in scripts:
-                scriptFile = os.path.join(cfg['dataPath'], 'scripts', script)
-                tempDir    = tempfile.mkdtemp(prefix='cruncher')
-                resultFile = os.path.join(tempDir, '%s_results.json' % script)
-                dataFile   = os.path.join(tempDir, '%s_files.json'   % script)
+        for script in scripts:
+            scriptFile = os.path.join(cfg['dataPath'], 'scripts', script)
+            tempDir    = tempfile.mkdtemp(prefix='cruncher')
+            resultFile = os.path.join(tempDir, '%s_results.json' % script)
+            dataFile   = os.path.join(tempDir, '%s_files.json'   % script)
 
-                for f in os.listdir(tempDir):
-                    os.remove(os.path.join(tempDir, f))
-                with open(dataFile, 'w') as h:
-                    h.write(json.dumps(pendingData[domain]))
-                if os.path.exists(resultFile):
-                    os.path.rmfile(resultFile)
-                for f in pendingData[domain]:
-                    shutil.copyfile(os.path.join(cfg['domainPath'], domain, f), os.path.join(tempDir, f))
-                log.info('%s %s %s %s %s' % (scriptFile, domain, tempDir, dataFile, resultFile))
+            for f in os.listdir(tempDir):
+                os.remove(os.path.join(tempDir, f))
+            with open(dataFile, 'w') as h:
+                h.write(json.dumps(pendingData[domain]))
+            if os.path.exists(resultFile):
+                os.path.rmfile(resultFile)
+            for f in pendingData[domain]:
+                shutil.copyfile(os.path.join(cfg['domainPath'], domain, f), os.path.join(tempDir, f))
+            log.info('%s %s %s %s %s' % (scriptFile, domain, tempDir, dataFile, resultFile))
+            try:
                 subprocess.call([scriptFile, domain, tempDir, dataFile, resultFile])
-
-            break
+                saveResults(domain, script, resultFile)
+            except:
+                log.error('%s' % scriptFile)
 
 def getSeenData(domain):
     seenFilename = os.path.join(domain.domainPath, 'processed.json')
@@ -147,4 +181,3 @@ if __name__ == '__main__':
     scripts     = getScripts(cfg)
 
     process(cfg, scripts, pendingData)
-    print scripts

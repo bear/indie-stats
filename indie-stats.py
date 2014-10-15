@@ -20,7 +20,7 @@ import redis
 import requests
 
 from urlparse import urlparse, ParseResult
-from flask import Flask, request, redirect, render_template, session, flash
+from flask import Flask, request, redirect, render_template, session, flash, jsonify
 
 from flask.ext.wtf import Form
 from wtforms import TextField, HiddenField, BooleanField
@@ -108,7 +108,9 @@ def handleLogin():
     if form.validate_on_submit():
         domain = form.domain.data
         url    = urlparse(domain)
-        if url.scheme not in ('http', 'https'):
+        if url.scheme in ('http', 'https'):
+            domain = '%s://%s' % (url.scheme, url.netloc)
+        else:
             if len(url.netloc) == 0:
                 domain = 'http://%s' % url.path
             else:
@@ -117,35 +119,35 @@ def handleLogin():
         authEndpoints = ninka.indieauth.discoverAuthEndpoints(domain)
         app.logger.info('form domain [%s] domain [%s] auth endpoints %d' % (form.domain.data, domain, len(authEndpoints)))
 
+        authURL = urlparse('https://indieauth.com/auth')
         if 'authorization_endpoint' in authEndpoints:
-            authURL = None
             for url in authEndpoints['authorization_endpoint']:
                 authURL = url
                 break
 
-            if authURL is not None:
-                url = ParseResult(authURL.scheme, 
-                                  authURL.netloc,
-                                  authURL.path,
-                                  authURL.params,
-                                  urllib.urlencode({ 'me':            domain,
-                                                     'redirect_uri':  form.redirect_uri.data,
-                                                     'client_id':     form.client_id.data,
-                                                     'scope':         'post',
-                                                     'response_type': 'id'
-                                                   }),
-                                  authURL.fragment).geturl()
+        if authURL is not None:
+            url = ParseResult(authURL.scheme, 
+                              authURL.netloc,
+                              authURL.path,
+                              authURL.params,
+                              urllib.urlencode({ 'me':            domain,
+                                                 'redirect_uri':  form.redirect_uri.data,
+                                                 'client_id':     form.client_id.data,
+                                                 'scope':         'post',
+                                                 'response_type': 'id'
+                                               }),
+                              authURL.fragment).geturl()
 
-                if db is not None:
-                    app.logger.info('storing auth response [%s]' % domain)
-                    db.hset(domain, 'from_uri',     form.from_uri.data)
-                    db.hset(domain, 'redirect_uri', form.redirect_uri.data)
-                    db.hset(domain, 'client_id',    form.client_id.data)
-                    db.hset(domain, 'scope',        'post')
-                    db.hdel(domain, 'code')  # clear any existing auth code
-                    db.expire(domain, cfg['auth_timeout']) # expire in N minutes unless successful
+            if db is not None:
+                app.logger.info('storing auth response [%s]' % domain)
+                db.hset(domain, 'from_uri',     form.from_uri.data)
+                db.hset(domain, 'redirect_uri', form.redirect_uri.data)
+                db.hset(domain, 'client_id',    form.client_id.data)
+                db.hset(domain, 'scope',        'post')
+                db.hdel(domain, 'code')  # clear any existing auth code
+                db.expire(domain, cfg['auth_timeout']) # expire in N minutes unless successful
 
-                return redirect(url)
+            return redirect(url)
         else:
             return 'insert fancy no auth endpoint found error message here', 403
 
@@ -333,6 +335,28 @@ def handleDomain():
             templateData['from_uri'] = '/domain'
 
         return render_template('domain-not-found.jinja', **templateData)
+
+@app.route('/stats', methods=['GET'])
+def handleStats():
+    app.logger.info('handleStats [%s]' % request.method)
+
+    d = request.args.get('domain')
+    app.logger.info('args["domain"] %s' % d)
+    if d is None:
+        return 'please specify a domain parameter, e.g. https://indie-stats.com/stats?domain= ', 404
+    else:
+        url = urlparse(d)
+        if len(url.netloc) > 0:
+            domain = url.netloc
+        else:
+            domain = d
+        statsFile = os.path.join(cfg['domainPath'], domain, 'stats_%s.json' % domain)
+        if os.path.exists(statsFile):
+            with open(statsFile, 'r') as h:
+                result = json.load(h)
+                return jsonify(**result)
+        else:
+            return 'unable to determine domain', 404
 
 @app.route('/', methods=['GET'])
 def handleIndex():
