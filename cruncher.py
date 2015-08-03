@@ -20,7 +20,7 @@ from domains import Domains, Domain
 # import pprint
 # pp = pprint.PrettyPrinter(indent=4)
 
-log = logging.getLogger('gather')
+log = logging.getLogger('cruncher')
 
 def saveResults(domain, script, resultFile):
     statsFile = os.path.join(cfg['domainPath'], domain, 'stats_%s.json' % domain)
@@ -58,28 +58,47 @@ def saveResults(domain, script, resultFile):
 
 def process(cfg, scripts, pendingData):
     log.info('calling %d scripts for %d domains' % (len(scripts), len(pendingData)))
-
     for domain in pendingData.keys():
-        for script in scripts:
-            scriptFile = os.path.join(cfg['dataPath'], 'scripts', script)
-            tempDir    = tempfile.mkdtemp(prefix='cruncher')
-            resultFile = os.path.join(tempDir, '%s_results.json' % script)
-            dataFile   = os.path.join(tempDir, '%s_files.json'   % script)
+        processed = []
+        for f in pendingData[domain]:
+            processed.append(f)
+        if len(processed) > 0:
+            for script in scripts:
+                scriptFile = os.path.join(cfg['dataPath'], 'scripts', script)
+                tempDir    = tempfile.mkdtemp(prefix='cruncher')
+                resultFile = os.path.join(tempDir, '%s_results.json' % script)
+                dataFile   = os.path.join(tempDir, '%s_files.json'   % script)
 
-            for f in os.listdir(tempDir):
-                os.remove(os.path.join(tempDir, f))
-            with open(dataFile, 'w') as h:
-                h.write(json.dumps(pendingData[domain]))
-            if os.path.exists(resultFile):
-                os.path.rmfile(resultFile)
-            for f in pendingData[domain]:
-                shutil.copyfile(os.path.join(cfg['domainPath'], domain, f), os.path.join(tempDir, f))
-            log.info('%s %s %s %s %s' % (scriptFile, domain, tempDir, dataFile, resultFile))
-            try:
-                subprocess.call([scriptFile, domain, tempDir, dataFile, resultFile])
+                for f in os.listdir(tempDir):
+                    os.remove(os.path.join(tempDir, f))
+                with open(dataFile, 'w') as h:
+                    h.write(json.dumps(pendingData[domain]))
+                if os.path.exists(resultFile):
+                    os.path.rmfile(resultFile)
+                for f in pendingData[domain]:
+                    shutil.copyfile(os.path.join(cfg['domainPath'], domain, f), os.path.join(tempDir, f))
+                log.info('%s %s %s %s %s' % (scriptFile, domain, tempDir, dataFile, resultFile))
+                try:
+                    subprocess.call([scriptFile, domain, tempDir, dataFile, resultFile])
+                except:
+                    log.exception('%s' % scriptFile)
                 saveResults(domain, script, resultFile)
+            saveSeenData(domain, processed)
+
+def saveSeenData(domain, processed):
+    seenFilename = os.path.join(cfg['domainPath'], domain, 'processed.json')
+    if os.path.exists(seenFilename):
+        with open(seenFilename, 'r') as h:
+            try:
+                seenData = json.load(h)
             except:
-                log.error('%s' % scriptFile)
+                seenData = []
+    else:
+        seenData = []
+    log.info('%d files added to processed list for %s' % (len(processed), domain))
+    seenData += processed
+    with open(seenFilename, 'w+') as h:
+        h.write(json.dumps(seenData))
 
 def getSeenData(domain):
     seenFilename = os.path.join(domain.domainPath, 'processed.json')
@@ -88,9 +107,9 @@ def getSeenData(domain):
             try:
                 seenData = json.load(h)
             except:
-                seenData = {}
+                seenData = []
     else:
-        seenData = {}
+        seenData = []
     return seenData
 
 def getPendingData(cfg, domains):
@@ -101,12 +120,10 @@ def getPendingData(cfg, domains):
         domainFile   = '%s.json' % key
         seen         = getSeenData(domain)
         pending[key] = []
-
         for f in os.listdir(domain.domainPath):
-            if f != domainFile and os.path.isfile(os.path.join(domain.domainPath, f)):
+            if f != domainFile and os.path.isfile(os.path.join(domain.domainPath, f)) and not f.startswith('stats_') and not f.startswith('processed'):
                 if f not in seen:
                     pending[key].append(f)
-    log.info('%d domains found with pending files' % len(pending))
     return pending
 
 def getScripts(cfg):

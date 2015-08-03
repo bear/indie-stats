@@ -246,8 +246,6 @@ def handleDomain():
     owner = False
     authed, indieauth_id, authed_domain, authed_url = checkAuth()
 
-
-
     d = request.args.get('id')
     app.logger.info('args["id"] %s' % d)
     if d is None:
@@ -343,7 +341,9 @@ def handleStats():
     d = request.args.get('domain')
     app.logger.info('args["domain"] %s' % d)
     if d is None:
-        return 'please specify a domain parameter, e.g. https://indie-stats.com/stats?domain= ', 404
+        with open(os.path.join(cfg['dataPath'], 'summary.json'), 'r') as h:
+            result = json.load(h)
+        return jsonify(**result)
     else:
         url = urlparse(d)
         if len(url.netloc) > 0:
@@ -372,6 +372,11 @@ def handleIndex():
     templateData['authed_domain'] = authed_domain
     templateData['authed_url']    = authed_url
     templateData['from_uri']      = '/'
+
+    with open(os.path.join(cfg['dataPath'], 'summary.json'), 'r') as h:
+        stats = json.load(h)
+        for key in stats:
+            templateData[key] = stats[key] 
 
     return render_template('index.jinja', **templateData)
 

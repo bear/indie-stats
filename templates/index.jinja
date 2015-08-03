@@ -1,5 +1,10 @@
 {% extends "base.jinja" %}
 {% block content %}
-<p>Indie-Stats is tracking ### domains</p>
-<p>add words here</p>
+<p>Tracking statistics from {{ domain_count }} domains since {{ start_date }}</p>
+<p>Domains with:</p>
+<ul>
+<li>MF2 present: {{ mf_found }}</li>
+<li>Polling Errors: {{ error_polling }}</li>
+</ul>
+<p>View the json data for an individual domain by visiting /stats?domain=domain.com</p>
 {% endblock content %}
