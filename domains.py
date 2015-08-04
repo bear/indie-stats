@@ -95,7 +95,8 @@ class Domain(object):
                     if 'charset' in r.headers.get('content-type', ''):
                         self.html = r.text
                     else:
-                        self.html = r.content
+                        r.encoding = 'utf8'
+                        self.html = r.text
                 self.headers = r.headers
                 self.status  = r.status_code
             except:
@@ -113,12 +114,21 @@ class Domain(object):
                 data['mf2'] = {}
         if not os.path.exists(self.domainPath):
             os.mkdir(self.domainPath)
+
+        if 'html' in data:
+            try:
+                data['html'] = data['html'].encode('utf8')
+            except:
+                data['html'] = ""
+
+        sData = json.dumps(data, indent=2, ensure_ascii=False, encoding='utf8')
+
         with open(self.domainFile, 'w') as h:
-            h.write(json.dumps(data, indent=2))
+            h.write(sData.encode('utf8'))
         if self.ts is not None:
             statFile = os.path.join(self.domainPath, '%s_%s.json' % (time.strftime('%Y%m%dT%H%M%S', self.ts), self.domain))
             with open(statFile, 'w') as h:
-                h.write(json.dumps(data, indent=2))
+                h.write(sData.encode('utf8'))
         return data
 
 class Domains(OrderedDict):
@@ -167,4 +177,4 @@ class Domains(OrderedDict):
         for key in self.keys():
             data.append(self[key].asDict())        
         with open(self.domainFile, 'w') as h:
-            h.write(json.dumps(data, indent=2))
+            h.write(json.dumps(data, indent=2, ensure_ascii=False, encoding='utf8'))

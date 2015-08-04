@@ -83,17 +83,20 @@ def refresh(cfg, domains):
     domainList = os.path.join(cfg['domainPath'], 'domain_list.txt')
     if os.path.exists(domainList):
         with open(domainList, 'r') as h:
-            for url in h.readlines():
-                print '[%s]' % url.strip()
-                domain = Domain(url.strip(), cfg['domainPath'])
-                if domain.domain not in domains:
-                    log.info('%s not found in domain list' % domain.domain)
-                    domains[domain.domain] = domain
+            for line in h.readlines():
+                url = line.strip().encode('utf8')
+                if len(url) > 0:
+                    domain = Domain(url, cfg['domainPath'])
+                    if domain.domain not in domains:
+                        log.info('%s not found in domain list' % domain.domain)
+                        domains[domain.domain] = domain
 
     for key in domains:
-        domain = domains[key]
-        result = domain.refresh()
-        log.info('%s: %s' % (domain.domain, result['status']))
+        try:
+            domain = domains[key]
+            result = domain.refresh()
+        finally:
+             log.info('%s: %s' % (domain.domain, result['status']))
 
 def initLogging(logger, logpath=None, echo=False):
     logFormatter = logging.Formatter("%(asctime)s %(levelname)-9s %(message)s", "%Y-%m-%d %H:%M:%S")
