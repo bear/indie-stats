@@ -80,6 +80,16 @@ def gather(cfg, domains):
 
 def refresh(cfg, domains):
     log.info('refreshing domains')
+    domainList = os.path.join(cfg['domainPath'], 'domain_list.txt')
+    if os.path.exists(domainList):
+        with open(domainList, 'r') as h:
+            for url in h.readlines():
+                print '[%s]' % url.strip()
+                domain = Domain(url.strip(), cfg['domainPath'])
+                if domain.domain not in domains:
+                    log.info('%s not found in domain list' % domain.domain)
+                    domains[domain.domain] = domain
+
     for key in domains:
         domain = domains[key]
         result = domain.refresh()
