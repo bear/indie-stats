@@ -27,6 +27,9 @@ from wtforms import TextField, HiddenField, BooleanField
 from wtforms.validators import Required
 
 import ninka
+
+sys.path.append(os.path.dirname(__file__))
+
 from domains import Domain, Domains
 
 class LoginForm(Form):

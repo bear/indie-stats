@@ -15,12 +15,11 @@ import requests
 from urlparse import urlparse, ParseResult
 from mf2py.parser import Parser
 
-# check for uwsgi, use PWD if present or getcwd() if not
-_uwsgi = 'UWSGI_ORIGINAL_PROC_NAME' in os.environ.keys()
-if _uwsgi:
-    from ordereddict import OrderedDict
-else:
+try:
     from collections import OrderedDict
+except ImportError:
+    # python 2.6 or earlier, use backport
+    from ordereddict import OrderedDict
 
 
 class Domain(object):
