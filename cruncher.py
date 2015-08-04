@@ -65,24 +65,37 @@ def process(cfg, scripts, pendingData):
         if len(processed) > 0:
             for script in scripts:
                 scriptFile = os.path.join(cfg['dataPath'], 'scripts', script)
-                tempDir    = tempfile.mkdtemp(prefix='cruncher')
-                resultFile = os.path.join(tempDir, '%s_results.json' % script)
-                dataFile   = os.path.join(tempDir, '%s_files.json'   % script)
-
-                for f in os.listdir(tempDir):
-                    os.remove(os.path.join(tempDir, f))
-                with open(dataFile, 'w') as h:
-                    h.write(json.dumps(pendingData[domain]))
-                if os.path.exists(resultFile):
-                    os.path.rmfile(resultFile)
-                for f in pendingData[domain]:
-                    shutil.copyfile(os.path.join(cfg['domainPath'], domain, f), os.path.join(tempDir, f))
-                log.info('%s %s %s %s %s' % (scriptFile, domain, tempDir, dataFile, resultFile))
                 try:
-                    subprocess.call([scriptFile, domain, tempDir, dataFile, resultFile])
-                except:
-                    log.exception('%s' % scriptFile)
-                saveResults(domain, script, resultFile)
+                    tempDir    = tempfile.mkdtemp(prefix='cruncher')
+                    resultFile = os.path.join(tempDir, '%s_results.json' % script)
+                    dataFile   = os.path.join(tempDir, '%s_files.json'   % script)
+
+                    # for f in os.listdir(tempDir):
+                    #     os.remove(os.path.join(tempDir, f))
+                    # if os.path.exists(resultFile):
+                    #     os.path.rmfile(resultFile)
+                    with open(dataFile, 'w') as h:
+                        h.write(json.dumps(pendingData[domain]))
+                    for f in pendingData[domain]:
+                        shutil.copyfile(os.path.join(cfg['domainPath'], domain, f), os.path.join(tempDir, f))
+                    log.info('%s %s %s %s %s' % (scriptFile, domain, tempDir, dataFile, resultFile))
+                    try:
+                        subprocess.call([scriptFile, domain, tempDir, dataFile, resultFile])
+                    except:
+                        log.exception('%s' % scriptFile)
+                    saveResults(domain, script, resultFile)
+                finally:
+                    for f in os.listdir(tempDir):
+                        s = os.path.join(tempDir, f)
+                        try:
+                            os.remove(s)
+                        except:
+                            log.exception('%s -- error removing temporary file [%s]' % (scriptFile, s))
+                    try:
+                        os.rmdir(tempDir)
+                    except:
+                        log.exception('%s -- error removing temporary directory [%s]' % (scriptFile, tempDir))
+
             saveSeenData(domain, processed)
 
 def saveSeenData(domain, processed):
