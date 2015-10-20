@@ -1,0 +1,5 @@
+redis~=2.10.3
+requests~=2.7.0
+flask~=0.10.1
+flask-wtf~=0.12
+ninka~=0.1.4
