@@ -92,27 +92,27 @@ class DomainList(Resource):
             l = json.loads(l)
         return l
 
-    def post(self):
-        args = parser.parse_args()
-        domain = args['domain']
-        found = False
-        domainList = os.path.join(cfg['domainPath'], 'domain_list.txt')
-        if os.path.exists(domainList):
-            with open(domainList, 'r') as h:
-                for line in h.readlines():
-                    d = line.strip().encode('utf8')
-                    if d == domain:
-                        found = True
-        if not found:
-            app.logger.info('%s not found in domain list' % domain)
-            with open(domainList, 'a+') as h:
-                h.write('%s\n' % domain)
-            d = Domain(domain, cfg.domainPath)
-            d.store()
-            db.delete('cache-domain-list')
-            return { "domain": domain, "result": "Domain has been added to the tracking list" }, 201
-        else:
-            return { "domain": domain, "result": "Domain is already being tracked" }, 200
+    # def post(self):
+    #     args = parser.parse_args()
+    #     domain = args['domain']
+    #     found = False
+    #     domainList = os.path.join(cfg['domainPath'], 'domain_list.txt')
+    #     if os.path.exists(domainList):
+    #         with open(domainList, 'r') as h:
+    #             for line in h.readlines():
+    #                 d = line.strip().encode('utf8')
+    #                 if d == domain:
+    #                     found = True
+    #     if not found:
+    #         app.logger.info('%s not found in domain list' % domain)
+    #         with open(domainList, 'a+') as h:
+    #             h.write('%s\n' % domain)
+    #         d = Domain(domain, cfg.domainPath)
+    #         d.store()
+    #         db.delete('cache-domain-list')
+    #         return { "domain": domain, "result": "Domain has been added to the tracking list" }, 201
+    #     else:
+    #         return { "domain": domain, "result": "Domain is already being tracked" }, 200
 
 class DomainInfo(Resource):
     def get(self, domain):
