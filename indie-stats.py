@@ -225,6 +225,7 @@ def handleLogin():
                     if data and 'token' in data: # clear any existing auth data
                         db.delete('token-%s' % data['token'])
                         db.hdel(key, 'token')
+                    db.hset(key, 'auth_url',     ParseResult(authURL.scheme, authURL.netloc, authURL.path, '', '', '').geturl())
                     db.hset(key, 'from_uri',     form.from_uri.data)
                     db.hset(key, 'redirect_uri', form.redirect_uri.data)
                     db.hset(key, 'client_id',    form.client_id.data)
@@ -253,12 +254,17 @@ def handleLoginSuccess():
         key  = 'login-%s' % me
         data = db.hgetall(key)
         if data:
+            app.logger.info('calling [%s] to validate code' % data['auth_url'])
             r = ninka.indieauth.validateAuthCode(code=code, 
-                                                 client_id=me,
-                                                 redirect_uri=data['redirect_uri'])
+                                                 client_id=data['client_id'],
+                                                 redirect_uri=data['redirect_uri'],
+                                                 validationEndpoint=data['auth_url'])
             if r['status'] == requests.codes.ok:
                 app.logger.info('login code verified')
-                scope    = r['response']['scope']
+                if 'scope' in r['response']:
+                    scope = r['response']['scope']
+                else:
+                    scope = data['scope']
                 from_uri = data['from_uri']
                 token    = str(uuid.uuid4())
 
