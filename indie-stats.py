@@ -382,36 +382,31 @@ def domainStatus(domain):
                 result = 'present'
     return result
 
-@app.route('/info', methods=['GET', 'POST'])
+@app.route('/domain', methods=['GET', 'POST'])
 def handleDomain():
     app.logger.info('handleInfo [%s]' % request.method)
 
     owner = False
-    access_token = request.headers.get('Authorization')
-    if access_token:
-        access_token = access_token.replace('Bearer ', '')
-    me, client_id, scope = checkAccessToken(access_token)
-    app.logger.info('[%s] [%s] [%s] [%s]' % (access_token, me, client_id, scope))
+    authed_domain = None
+    authed, indieauth_id = checkAuth()
+    app.logger.info('[%s] [%s]' % (authed, indieauth_id))
+    arg_domain = request.args.get('domain')
+    app.logger.info('args["domain"] %s' % arg_domain)
 
-    if me is None or client_id is None:
-        authed = False
-        d = request.args.get('domain')
-        app.logger.info('args["domain"] %s' % d)
-        if d is None:
-            d     = client_id
-            owner = True
-    else:
-        authed = True
-        d = d.lower().replace('http://', '').replace('https://', '')
-        s = client_id.lower().replace('http://', '').replace('https://', '')
-        owner = d == s
+    if authed:
+        authed_url = urlparse(indieauth_id)
+        authed_domain = authed_url.netloc
+        if arg_domain is None:
+            arg_domain = authed_domain
+        owner = arg_domain == authed_domain
 
-    if d is not None:
-        app.logger.info('%s %s %s %s' % (d, cfg.dataPath, cfg.domainPath, cfg.domains))
-        domainList = Domains(cfg.dataPath, cfg.domainPath, cfg.domains)
-        if d not in domainList:
-            domainList[d] = Domain(d, cfg.domainPath)
-        domain = domainList[d]
+    if arg_domain is not None:
+        app.logger.info('%s %s %s %s' % (arg_domain, cfg.dataPath, cfg.domainPath, cfg.domains))
+        # domainList = Domains(cfg.dataPath, cfg.domainPath, cfg.domains)
+        # if arg_domain not in domainList:
+        #     domainList[arg_domain] = Domain(arg_domain, cfg.domainPath)
+        # domain = domainList[arg_domain]
+        domain = Domain(arg_domain, cfg.domainPath)
         status = domainStatus(domain)
         found  = domain.found
 
@@ -432,11 +427,9 @@ def handleDomain():
                 domain.excluded = form.excluded.data
                 domain.claimed  = True
                 domain.store()
-                domainList.store()
                 return redirect('/domain')
             else:
                 flash('all fields are required')
-
 
         if not owner:
             if domain.excluded:
@@ -452,12 +445,12 @@ def handleDomain():
         templateContext['title']         = 'Domain Information'
         templateContext['form']          = form
         templateContext['authed']        = authed
-        templateContext['authed_domain'] = me
-        templateContext['authed_url']    = me
+        templateContext['authed_domain'] = authed_domain
+        templateContext['authed_url']    = indieauth_id
         templateContext['owner']         = owner
         templateContext['domain']        = domain.domain
         templateContext['domain_url']    = domain.url
-        templateContext['from_uri']      = '/info?domain=%s' % domain.domain
+        templateContext['from_uri']      = '/domain?domain=%s' % domain.domain
         if domain.ts is None:
             templateContext['domain_polled']    = ''
             templateContext['domain_polled_ts'] = 'n/a'
@@ -467,66 +460,63 @@ def handleDomain():
 
         return render_template('domain.jinja', **templateContext)
     else:
-        form = DomainNotFoundForm(domain=d)
+        form = DomainNotFoundForm(domain=arg_domain)
         templateContext['title']         = 'Domain not found'
         templateContext['form']          = form
-        templateContext['domain']        = d
+        templateContext['domain']        = arg_domain
         templateContext['authed']        = authed
-        templateContext['authed_domain'] = me
-        templateContext['authed_url']    = me
+        templateContext['authed_domain'] = authed_domain
+        templateContext['authed_url']    = indieauth_id
         templateContext['domain_url']    = ''
 
-        if d is None:
-            templateContext['message']  = 'You must be logged in or specify a domain to search for'
+        if arg_domain is None:
+            templateContext['message']  = 'You must be logged in or specify include a domain parameter to search for'
             templateContext['from_uri'] = ''
         else:
-            templateContext['message']  = 'Unable to find any information about %s' % d
+            templateContext['message']  = 'Unable to find any information about %s' % arg_domain
             templateContext['from_uri'] = '/domain'
 
         return render_template('domain-not-found.jinja', **templateContext)
 
-# @app.route('/stats', methods=['GET'])
-# def handleStats():
-#     app.logger.info('handleStats [%s]' % request.method)
+@app.route('/stats', methods=['GET'])
+def handleStats():
+    app.logger.info('handleStats [%s]' % request.method)
 
-#     d = request.args.get('domain')
-#     app.logger.info('args["domain"] %s' % d)
-#     if d is None:
-#         with open(os.path.join(cfg['dataPath'], 'summary.json'), 'r') as h:
-#             result = json.load(h)
-#         return jsonify(**result)
-#     else:
-#         url = urlparse(d)
-#         if len(url.netloc) > 0:
-#             domain = url.netloc
-#         else:
-#             domain = d
-#         statsFile = os.path.join(cfg['domainPath'], domain, 'stats_%s.json' % domain)
-#         if os.path.exists(statsFile):
-#             with open(statsFile, 'r') as h:
-#                 result = json.load(h)
-#                 return jsonify(**result)
-#         else:
-#             return 'unable to determine domain', 404
+    d = request.args.get('domain')
+    app.logger.info('args["domain"] %s' % d)
+    if d is None:
+        with open(os.path.join(cfg['dataPath'], 'summary.json'), 'r') as h:
+            result = json.load(h)
+        return jsonify(**result)
+    else:
+        url = urlparse(d)
+        if len(url.netloc) > 0:
+            domain = url.netloc
+        else:
+            domain = d
+        statsFile = os.path.join(cfg['domainPath'], domain, 'stats_%s.json' % domain)
+        if os.path.exists(statsFile):
+            with open(statsFile, 'r') as h:
+                result = json.load(h)
+                return jsonify(**result)
+        else:
+            return 'unable to determine domain', 404
 
 @app.route('/', methods=['GET'])
 def handleIndex():
     app.logger.info('handleIndex [%s]' % request.method)
 
-    access_token = request.headers.get('Authorization')
-    if access_token:
-        access_token = access_token.replace('Bearer ', '')
-    me, client_id, scope = checkAccessToken(access_token)
-    app.logger.info('[%s] [%s] [%s] [%s]' % (access_token, me, client_id, scope))
+    authed, indieauth_id = checkAuth()
+    app.logger.info('[%s] [%s]' % (authed, indieauth_id))
 
     form = IndexForm()
 
     templateContext = {}
     templateContext['title']         = 'Indie-Stats'
     templateContext['form']          = form
-    templateContext['authed']        = me is not None
-    templateContext['authed_domain'] = client_id
-    templateContext['authed_url']    = client_id
+    templateContext['authed']        = authed
+    templateContext['authed_domain'] = indieauth_id
+    templateContext['authed_url']    = indieauth_id
     templateContext['from_uri']      = '/'
 
     with open(os.path.join(cfg.dataPath, 'summary.json'), 'r') as h:
@@ -590,7 +580,7 @@ def doStart(app, configFile, ourHost=None, ourPort=None, ourPath=None, echo=Fals
     return _cfg, _db
 
 if _uwsgi:
-    cfg, db = doStart(app, _configFile)
+    cfg, db = doStart(app, _configFile, echo=True)
 #
 # None of the below will be run for nginx + uwsgi
 #
