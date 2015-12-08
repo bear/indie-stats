@@ -25,7 +25,7 @@ except ImportError:
 class Domain(object):
     """An Indieweb Domain"""
 
-    def __init__(self, url, domainPath):
+    def __init__(self, domain, domainPath):
         self.domainRoot = os.path.abspath(os.path.expanduser(domainPath))
         self.domain     = None
         self.url        = None
@@ -41,19 +41,11 @@ class Domain(object):
         self.headers    = []
         self.history    = []
 
-        self.load(url)
+        self.load(domain)
 
-    def load(self, url):
-        item = urlparse(url)
-        if item.scheme in ('http', 'https'):
-            self.domain = item.netloc
-            self.url    = url
-        else:
-            self.domain = item.path
-        if self.url is None:
-            self.url = 'http://%s' % self.domain
-
-        self.domain     = self.domain.lower()
+    def load(self, domain):
+        self.url        = 'http://%s' % domain
+        self.domain     = domain.lower()
         self.domainPath = os.path.join(self.domainRoot, self.domain)
         self.domainFile = os.path.join(self.domainPath, '%s.json' % self.domain)
 
@@ -67,6 +59,14 @@ class Domain(object):
                     self.found = True
                 except:
                     self.found = False
+
+        processedFile = os.path.join(self.domainPath, 'processed.json')
+        if os.path.exists(processedFile):
+            with open(processedFile, 'r') as h:
+                try:
+                    self.history = json.load(h)
+                except:
+                    self.history = []
 
     def asDict(self):
         return { 'domain':   self.domain,
@@ -101,7 +101,6 @@ class Domain(object):
                 self.status  = r.status_code
             except:
                 self.status = 500
-            self.history.insert(0, self.status)
 
         return self.store()
 

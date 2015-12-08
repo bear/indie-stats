@@ -14,20 +14,27 @@ An implementation of the idea from https://snarfed.org/indie-stats
 - Aggregate stats and generate reports
 - Make data available for exporting in a number crunching friendly format
 
-# Structure
+# Data
 
-    data\
-      domains.dat -- master list of domains
-      domains\
-          example.com -- json meta data
-          example.com__data -- stats, one line per update - json format
+For each domain the following is stored:
 
-# Meta Data
-
-Stored per domain:
-- domain name: unique key
-- url
+- domain name: the network location for the domain
+- url: the full url used to retrieve the domain
+- headers: any headers returned from the GET request
+- status: the HTTP status code from the GET request
+- polled: the timestamp when the GET request was made
+- excluded: if the domain has been added to the exclude list by the domain owner
+- claimed: if the domain has been claimed by the domain owner
+- html: the raw html retrieved from the GET request
 - mf2: mf2 dictionary from last get
-- html: raw html from last get
-- refresh: status code
-- refreshed: utc timestamp
+- history: list of domain archive json files
+
+When the domain is polled the current domain information is moved to an archive file and then the domain is fetched.
+
+# API
+
+Indie-Stats has a very simple API now that can be accessed from ```https://indie-stats.com/api/v1/``` and provides the following resources. By default all values are returned as JSON.
+
+
+- ```/domains``` -- return a JSON list of all domains being tracked
+- ```/domains/<domain>``` -- return the most recent information for the given domain

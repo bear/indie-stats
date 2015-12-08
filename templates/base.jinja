@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>{{ title }}</title>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
 
-    {% for key, value in meta.iteritems() %}
-    <meta name="{{ key }}" content="{{ value }}"/>
-    {% endfor %}
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
 
-    <link href="/static/main.css" rel="stylesheet" type="text/css">
+  <link href="/static/main.css" rel="stylesheet" type="text/css">
 </head>
 <body>
   <div class="header">

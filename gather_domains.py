@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-:copyright: (c) 2014 by Mike Taylor
+:copyright: (c) 2014-2015 by Mike Taylor
 :license: MIT, see LICENSE for more details.
 
 Walk thru a list of resources to extract possible IndieWeb domains from.
@@ -84,12 +84,12 @@ def refresh(cfg, domains):
     if os.path.exists(domainList):
         with open(domainList, 'r') as h:
             for line in h.readlines():
-                url = line.strip().encode('utf8')
-                if len(url) > 0:
-                    domain = Domain(url, cfg['domainPath'])
-                    if domain.domain not in domains:
-                        log.info('%s not found in domain list' % domain.domain)
-                        domains[domain.domain] = domain
+                domain = line.strip().encode('utf8')
+                if len(domain) > 0:
+                    o = Domain(domain, cfg['domainPath'])
+                    if o.domain not in domains:
+                        log.info('%s not found in domain list' % o.domain)
+                        domains[o.domain] = domain
 
     for key in domains:
         try:
@@ -113,7 +113,6 @@ def initLogging(logger, logpath=None, echo=False):
         logger.addHandler(echoHandler)
 
     logger.setLevel(logging.INFO)
-
 
 def loadConfig(configFilename):
     filename = os.path.abspath(os.path.expanduser(configFilename))
@@ -153,6 +152,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     cfg  = loadConfig(args.config)
+    db   = getRedis(cfg['redis'])
 
     initLogging(log, cfg['dataPath'], args.echo)
 

@@ -1,11 +1,8 @@
 {% extends "base.jinja" %}
 {% block content %}        
-<h1>Authenticate</h1>
+<h1>Sign In</h1>
 <form action="" method="post" name="login">
-    Domain: {{form.domain(size=20)}}
-    {{form.client_id}}
-    {{form.redirect_uri}}
-    {{form.from_uri}}
+    domain: {{form.me(size=20)}}
     {{form.hidden_tag()}}
     <p><button type="submit">Sign In</button></p>
 </form>
