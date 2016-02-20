@@ -1,0 +1,2 @@
+# m h  dom mon dow   command
+20 9 * * * /home/indiestats/indiestats.sh > /home/indiestats/cron.log 2>&1
