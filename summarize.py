@@ -87,7 +87,7 @@ if __name__ == '__main__':
                'good_polling':  0,
                'mf_found':      0,
                'excluded':      0,
-               'domains':       {},
+               'h_card':        0,
              }
     for key in domains:
         domain    = domains[key]
@@ -107,7 +107,14 @@ if __name__ == '__main__':
             if enddate > gStats['end_date']:
                 gStats['end_date'] = enddate
 
-            gStats['domains'][key] = stats
+            if 'count_global.py' in stats[enddate]:
+                s = stats[enddate]['count_global.py']
+                for k in ('good_polling', 'mf_found', 'excluded', 'error_polling'):
+                    if k in s:
+                        gStats[k] += s[k]
+            if 'count_hcards.py' in stats[enddate]:
+                s = stats[enddate]['count_hcards.py']
+                gStats['h_card'] += s['h-card']
 
     f = os.path.join(cfg['dataPath'], 'summary.json')
     with open(f, 'w') as h:

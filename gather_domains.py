@@ -12,6 +12,7 @@ import json
 import logging
 
 import requests
+from urlparse import urlparse
 from domains import Domains, Domain
 from mf2py.parser import Parser
 
@@ -45,9 +46,14 @@ def gather(cfg, domains):
                 if 'children' in item:
                     for child in item['children']:
                         if 'properties' in child:
-                            url = checkURL(child['properties']['url'][0])
-                            if url is not None:
-                                domain = Domain(url, cfg['domainPath'])
+                            s = checkURL(child['properties']['url'][0])
+                            if s is not None:
+                                url = urlparse(s)
+                                if len(url.netloc) > 0:
+                                    d = url.netloc
+                                else:
+                                    d = s
+                                domain = Domain(d, cfg['domainPath'])
                                 if domain.domain not in domains:
                                     log.info('%s not found in domain list' % domain.domain)
                                     n += 1
@@ -95,8 +101,9 @@ def refresh(cfg, domains):
         try:
             domain = domains[key]
             result = domain.refresh()
-        finally:
-             log.info('%s: %s' % (domain.domain, result['status']))
+            log.info('%s: %s' % (domain.domain, result['status']))
+        except:
+            log.error('%s: error finalizing' % key)
 
 def initLogging(logger, logpath=None, echo=False):
     logFormatter = logging.Formatter("%(asctime)s %(levelname)-9s %(message)s", "%Y-%m-%d %H:%M:%S")
@@ -152,7 +159,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     cfg  = loadConfig(args.config)
-    db   = getRedis(cfg['redis'])
 
     initLogging(log, cfg['dataPath'], args.echo)
 
