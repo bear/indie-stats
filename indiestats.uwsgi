@@ -1,0 +1,11 @@
+[uwsgi]
+base = /home/indiestats
+virtualenv = %(base)/.pyenv/versions/2.7.11
+app = indie-stats
+module = %(app)
+callable = app
+chdir = %(base)
+uid = indiestats
+gid = indiestats
+socket = 127.0.0.1:5001
+master = true

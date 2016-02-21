@@ -1,0 +1,14 @@
+description "uwsgi daemon for IndieStats"
+
+start on runlevel [2345]
+stop on runlevel [06]
+
+env PYENV_ROOT="/home/indiestats/.pyenv"
+
+setgid indiestats
+setuid indiestats
+
+exec /bin/bash -c '/home/indiestats/.pyenv/versions/2.7.11/bin/uwsgi --ini /home/indiestats/indiestats.uwsgi --logto /home/indiestats/indiestats.log'
+
+respawn
+respawn 1 10
