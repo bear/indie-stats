@@ -4,6 +4,7 @@ flask>=0.10.1
 flask-wtf>=0.12
 flask-restful>=0.3.4
 ninka>=0.3.2
+ronkyuu>=0.3.2
 bearlib>=0.9
 mf2py>=1.0.1
 beautifulsoup4>=4.3
