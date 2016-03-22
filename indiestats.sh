@@ -1,7 +1,5 @@
 #!/bin/bash
 cd /home/indiestats
-python gather_domains.py --config /etc/indie-stats.cfg --seed --refresh
-chown -R www-data:www-data /home/indiestats/domains/*
-chown -R www-data:www-data /home/indiestats/domains.json
-python cruncher.py --config /etc/indie-stats.cfg
-python summarize.py --config /etc/indie-stats.cfg
+python gather_domains.py --config /home/indiestats/indie-stats.cfg --seed --refresh
+python cruncher.py --config /home/indiestats/indie-stats.cfg
+python summarize.py --config /home/indiestats/indie-stats.cfg
