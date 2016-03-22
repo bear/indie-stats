@@ -52,24 +52,15 @@ class IndexForm(Form):
     client_id = HiddenField('client_id')
 
 # check for uwsgi, use PWD if present or getcwd() if not
-_uwsgi = __name__.startswith('uwsgi')
+_uwsgi = __name__.startswith('uwsgi') or 'UWSGI_ORIGINAL_PROC_NAME' in os.environ.keys()
 if _uwsgi:
-    _ourPath    = os.getenv('PWD', None)
-    _configFile = '/etc/indie-stats.cfg'
+    _ourPath = os.path.dirname(__name__.replace('uwsgi_file_', '').replace('_', '/'))
 else:
-    _ourPath    = os.getcwd()
-    _configFile = os.path.join(_ourPath, 'indie-stats.cfg')
+    _ourPath = os.getcwd()
+_configFile = os.path.join(_ourPath, 'indie-stats.cfg')
 
-# check for uwsgi, use PWD if present or getcwd() if not
-_uwsgi = __name__.startswith('uwsgi')
-if _uwsgi:
-    _ourPath    = os.path.dirname(__name__.replace('uwsgi_file_', '').replace('_', '/'))
-    _configFile = '/etc/indie-stats.cfg'
-    if not os.path.exists('/etc/indie-stats.cfg'):
-        _configFile = os.path.join(_ourPath, 'indie-stats.cfg')
-else:
-    _ourPath    = os.getcwd()
-    _configFile = os.path.join(_ourPath, 'indie-stats.cfg')
+print _ourPath
+print _configFile
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'foo'  # replaced downstream
